@@ -126,6 +126,13 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+        'documentos' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/documentos_pendientes_archivados_auto.log'),
+            'level' => env('LOG_LEVEL', 'debug'),
+            'days' => 30,
+            'replace_placeholders' => true,
+        ]
 
     ],
 
