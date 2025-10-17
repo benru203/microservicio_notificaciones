@@ -1,6 +1,6 @@
-# 📚 WebHook de Documentos
+# 📚 WebHook de Documentos y Automatizacion de Archivar Documentos
 
-Api REST desarrollada en Laravel 12 para las notificaicones asincrónicas (webhooks) de documentos, implementando **Arquitectura Hexagonal**, **Principios SOLID**, **TDD** y **Patrón Repository** con Eloquent ORM.
+Api REST desarrollada en Laravel 12 para las notificaicones asincrónicas (webhooks) de documentos, tareas de automatización de archivar documentos pendientes, implementando **Arquitectura Hexagonal**, **Principios SOLID**, **TDD** y **Patrón Repository** con Eloquent ORM.
 
 ![Laravel](https://img.shields.io/badge/laravel-purple?logo=laravel)
 ![PHP](https://img.shields.io/badge/php-blue?logo=php)
@@ -26,6 +26,7 @@ Api REST desarrollada en Laravel 12 para las notificaicones asincrónicas (webho
 
 ### Funcionalidades
 - ✅ Webhook para validacion de documentos y cambio de estado.
+- ✅ Schedule para autormzación de archivar documentos pendintes a las 90 días.
 
 ### Arquitectura y Patrones
 - 🏗️ **Arquitectura Hexagonal** (Puertos y Adaptadores)
@@ -37,6 +38,8 @@ Api REST desarrollada en Laravel 12 para las notificaicones asincrónicas (webho
 
 ---
 ## 🏛️ Arquitectura
+
+### WebHook
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -67,6 +70,44 @@ Api REST desarrollada en Laravel 12 para las notificaicones asincrónicas (webho
                     │  SQL Server   │
                     └───────────────┘
 ```
+### Schedule
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Command/Schedule                         │
+│                  (MicroservicioNotificaciones)              │
+│                        Schedule/Schedule                    │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                          Job                                │
+│                       (App.Jobs)                            │
+│                      BackgroundJob                          │
+└───────────────────────────┬─────────────────────────────────┘                            
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                   CAPA DE APLICACIÓN                        │
+│                    (Src.Application)                        │
+│            Services + DTOs + Casos de Uso                   │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                    CAPA DE DOMINIO                          │
+│                     (Src.Dominio)                           │
+│        Entidades + Interfaces + Reglas de Negocio           │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+┌───────────────────────────▼─────────────────────────────────┐
+│                 CAPA DE INFRAESTRUCTURA                     │
+│                  (Src.Infrastructura)                       │
+│                 Repositorios + Eloquent                     │
+└───────────────────────────┬─────────────────────────────────┘
+                            │
+                    ┌───────▼───────┐
+                    │  SQL Server   │
+                    └───────────────┘
+```
+---
 ## 📦 Prerequisitos
 
 ### Software Obligatorio
@@ -185,6 +226,10 @@ DB_PASSWORD=tu_contraseña
 # Opciones adicionales para SQL Server
 DB_ENCRYPT=yes
 DB_TRUST_SERVER_CERTIFICATE=false
+
+# Opciones para el Scheduler
+QUEUE_CONNECTION=sync
+CACHE_STORE=file
 ```
 
 ### 5. Ejecutar Migraciones
@@ -213,6 +258,18 @@ Edita el archivo `config/database.php` para configuraciones avanzadas:
     'encrypt' => env('DB_ENCRYPT', 'yes'),
     'trust_server_certificate' => env('DB_TRUST_SERVER_CERTIFICATE', false),
 ],
+
+### Configuración del Logger
+
+Edita el archivo `config/logging.php` para configuraciones avanzadas:
+```php
+'documentos' => [
+    'driver' => 'daily',
+    'path' => storage_path('logs/documentos_pendientes_archivados_auto.log'),
+    'level' => env('LOG_LEVEL', 'debug'),
+    'days' => 30,
+    'replace_placeholders' => true,
+]
 ```
 
 ### Caché y Optimización
@@ -232,6 +289,15 @@ php artisan view:cache
 ### Iniciar Servidor de Desarrollo
 ```bash
 php artisan serve
+```
+
+### Prueba de Command
+```bash
+ php artisan app:archivar-documentos-pendientes
+```
+### Prueba de Schedule
+```bash
+ php artisan schedule:run
 ```
 
 El microservicio estará disponible en `http://localhost:8000`
@@ -317,6 +383,7 @@ Content-Type: application/json
 │   │   ├── Controllers/     # Controladores de la API
 │   │   ├── Middleware/      # Middleware personalizado
 │   │   └── Requests/        # Form requests para validación
+|   ├── Jobs/ 
 │   ├── Models/              # Modelos Eloquent
 │   ├── Services/            # Lógica de negocio
 │   └── Repositories/        # Capa de acceso a datos
@@ -333,16 +400,26 @@ Content-Type: application/json
 ├── storage/
 ├── src/
 │   ├── Aplicacion/          # Capa de aplicación
+│   │   ├── ArchivarDocumento/
+│   │   |   ├── DTOs/        # DTOs
+│   │   |   ├── Interfaces/  # Interfaces
+│   │   |   └── Services/    # Servicios
 │   │   └── WebHook/
 │   │       ├── DTOs/        # DTOs
 │   │       ├── Interfaces/  # Interfaces
 │   │       └── Services/    # Servicios
 │   ├── Dominio/              # Capa de dominio
+│   │   ├── ArchivarDocumento/
+│   │   │   ├── Enums/       # Enums
+│   │   │   ├── Entidades/   # Entidades
+│   │   │   └── Interfaces/  # Interfaces
 │   │   ├── WebHook/
 │   │   │   ├── Enums/       # Enums
 │   │   │   ├── Entidades/   # Entidades
 │   │   │   └── Interfaces/  # Interfaces
 │   ├── Infrastructura/      # Capa de infraestructura
+│   │   ├── ArchivarDocumento/
+│   │   │   └── Repositorios/  # Repositorios
 │   │   └── Repositorios/    # Repositorios
 ├── tests/
 │   ├── Feature/             # Tests de integración
