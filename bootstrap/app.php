@@ -1,8 +1,12 @@
 <?php
 
+use App\Exceptions\Api\WebHook\DocumentoNotFound;
+use App\Http\Resources\WebHook\RespuestaWebHookResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -15,5 +19,18 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+
+        $exceptions->renderable(function (ValidationException $e, $request) {
+            return response()->json([
+                'message' => 'Error al validar los datos',
+                'errors' => $e->validator->errors(),
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        });
+        $exceptions->renderable(function (DocumentoNotFound $e, $request) {
+            return response()->json(
+                new RespuestaWebHookResponse($e->getMessage()),
+                Response::HTTP_NOT_FOUND
+            );
+        });
         //
     })->create();

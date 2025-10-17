@@ -2,6 +2,7 @@
 
 namespace Src\Aplicacion\WebHook\Servicios;
 
+use App\Exceptions\Api\WebHook\DocumentoNotFound;
 use Exception;
 use Src\Aplicacion\WebHook\DTOs\DocumentoDTO;
 use Src\Aplicacion\WebHook\Interfaces\Servicios\IWebHookService;
@@ -19,7 +20,7 @@ class WebHookService implements IWebHookService {
     public function actualizarEstado(DocumentoDTO $documentoDto): void {
         $documento = $this->documentoRepository->buscarDocumentoPorId($documentoDto->getId());
         if ($documento === null) {
-            throw new Exception("No se pudo encontrar el documento con id {$documentoDto->getId()}");
+            throw new DocumentoNotFound("No se pudo encontrar el documento con id {$documentoDto->getId()}");
         }
         $documento->cambiarEstado(EstadoEnum::from($documentoDto->getEstado()));
         $this->documentoRepository->actualizarDocumento($documento);
