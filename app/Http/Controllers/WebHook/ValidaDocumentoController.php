@@ -9,6 +9,7 @@ use App\Http\Resources\WebHook\RespuestaWebHookResponse;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 use Src\Aplicacion\WebHook\DTOs\DocumentoDTO;
 use Src\Aplicacion\WebHook\Interfaces\Servicios\IWebHookService;
 
@@ -28,6 +29,12 @@ class ValidaDocumentoController extends Controller
         }catch(DocumentoNotFound $e){
             return response()->json(new RespuestaWebHookResponse($e->getMessage()), Response::HTTP_NOT_FOUND);
         }catch(Exception $e){
+            Log::error([
+                'message' => $e->getMessage(),               
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return response()->json(new RespuestaWebHookResponse("Error al procesar la solicitud"), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
