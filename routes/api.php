@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\WebHook\ValidaDocumentoController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+
+Route::post('webhook/validar-documento', ValidaDocumentoController::class);
+
