@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('Documentos', function (Blueprint $table) {
             $table->string('Id')->primary(); 
-            $table->string('Estado');     
+            $table->string('Estado');   
+            $table->timestamp('FechaRegistro')->nullable();  
         });
     }
 
