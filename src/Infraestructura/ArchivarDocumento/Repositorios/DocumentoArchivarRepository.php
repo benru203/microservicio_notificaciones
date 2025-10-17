@@ -19,7 +19,7 @@ class DocumentoArchivarRepository implements IDocumentoArchivarRepository{
             ->where('FechaRegistro', '<=', Carbon::now()->subDays(90)) 
             ->get();
         return $documentos->map(function($documentoModel){
-            return new Documento($documentoModel->Id);
+            return new Documento($documentoModel->Id, $documentoModel->FechaRegistro);
         })->toArray();
     }
 

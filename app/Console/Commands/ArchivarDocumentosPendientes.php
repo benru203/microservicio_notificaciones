@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\ArchivarDocumentosPendientesJob;
 use App\Models\Repositorios\ArchivarDocumento\Documento;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
@@ -11,14 +12,6 @@ use Src\Aplicacion\ArchivarDocumento\Interfaces\Servicios\IDocumentoArchivarServ
 
 class ArchivarDocumentosPendientes extends Command
 {
-
-    private IDocumentoArchivarService $documentoArchivarService;
-
-    public function __construct(IDocumentoArchivarService $documentoArchivarService)
-    {
-        $this->documentoArchivarService = $documentoArchivarService;
-        parent::__construct();
-    }
     /**
      * The name and signature of the console command.
      *
@@ -38,18 +31,9 @@ class ArchivarDocumentosPendientes extends Command
      */
     public function handle()
     {
-        $this->info('Iniciando proceso de archivado de documentos pendientes...');
-        
-        $documentosPendientes = $this->documentoArchivarService->buscarDocumentoPendientePorArchivar();
-        foreach ($documentosPendientes as $documento) {
-            $this->info('Archivando documento: ' . $documento->getId());
-            $this->documentoArchivarService->archivarDocumento(new DocumentoDTO($documento->getId()));
-            Log::channel('documentos')->info('Documento archivado automáticamente', [
-                'id' => $documento->getId(),
-                'dias_transcurridos' => $documento->FechaRegistro->diffInDays(Carbon::now()),
-                'fecha_archivado' => Carbon::now()->format('Y-m-d H:i:s')
-            ]);
-        }
-
+        $this->info('Iniciando proceso de archivado de documentos pendientes...');        
+        ArchivarDocumentosPendientesJob::dispatch();
+        $this->info('Job despachado correctamente');       
+        return Command::SUCCESS;
     }
 }
